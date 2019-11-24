@@ -2,25 +2,22 @@ import requests
 import re
 import urllib.parse
 
-from user import User
+from Crowler.core.filtrs import User_Filtr
 
 class Spider():
 
-    def __init__(self, target_url, target_links):
+    def __init__(self, target_url, target_links, photos):
         self.target_url = target_url
         self.target_links = target_links
         self.next_pages = [target_url]
-        self.photos = []
+
+    def decode_html(self, url):
+        response = requests.get(url)
+        return(response.content.decode('utf-8'))
 
     def extract_links(self):
-        response = requests.get(self.target_url)
-        html = response.content.decode('utf-8')
+        html = self.decode_html(self.target_url)
         return re.findall('(?:href=")(.*?)"', html)
-
-    def extract_links_with_photo(self):
-        response = requests.get(self.target_url)
-        html = response.content.decode('utf-8')
-        return re.findall('(?:class="fleft" src=")(.*?)"', html)
 
     def crowl(self):
         href_links = self.extract_links()
@@ -35,23 +32,25 @@ class Spider():
                 if "https://www.olx.pl/oferta" in link and link not in self.target_links:
                     #print(link)
                     self.target_links.append(link)
-                
+            """  Maybe someday...  
             elif "https://www.otodom.pl/oferta" in link and link not in self.target_links:
                 self.target_links.append(link)
+            """
 
+    def take_all_info(self):
+        infos = []
+        for link in self.target_links:
+            if link != None:
+                html = self.decode_html(link)
+                photos = re.findall('(?:<img src=")(.*?)"', html)
+                price = re.findall('(?:<strong class="xxxx-large not-arranged">)(.*?) zł</strong>', html)
+                title = re.findall('(.*)</h1', html)
+                infos.append([link, photos[0], price[0], title[0]])
+        return infos
 
-    def crawling_on_photos(self):
-        href_links = self.extract_links_with_photo()
-
-        for link in href_links:
-            #link = urllib.parse.urljoin(self.target_url, link)
-
-            if link not in self.photos:
-                self.photos.append(link)
 
     def number_of_pages(self):
-        response = requests.get(self.target_url)
-        html = response.content.decode('utf-8')
+        html = self.decode_html(self.target_url)
         existance_page = re.findall('(?:&page=)(.*?)" data-cy="page-link-last">', html)
         return(existance_page)
 

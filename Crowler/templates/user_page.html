@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+    <div class="container">
+    <div class="card">
+    <div class="card-header">
+    <form method="POST">
+        {{ form.hidden_tag() }}<br>
+        <div class="row">
+            <div class="col">
+                {{ form.number_of_rooms.label}} {{ form.number_of_rooms(class="form-control") }}
+            </div>
+            <div class="col">
+                {{ form.localization.label }} {{ form.localization(class="form-control")}}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                {{ form.price_from.label }} {{ form.price_from(class="form-control")}}
+            </div>
+            <div class="col">
+                {{ form.price_to.label }} {{ form.price_to(class="form-control") }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                    
+            </div>
+            <div class="col">
+                <br>{{ form.submit(class="btn btn-primary") }}
+            </div>
+        </div>
+        </div>
+    </form>
+    <div class="card-body">
+    <ul class="list-group list-group-flush">
+    {% for num in length %}
+    <li class="list-group-item">
+        <div class="row">
+            <div class="col-4"><img src={{floats_to_show[num][1]}} class="img-rounded" height="150" width="200"></div>
+            <div class="col-6"><a href="{{floats_to_show[num][0]}}">{{floats_to_show[num][-1]}}</a></div>
+            <div class="col-2"><p>{{floats_to_show[num][2]}} zł</p></div>
+        </div>
+    </li>
+    {% endfor %}
+    </ul>
+    </div>
+    </div>
+    </div>
+</body>
+</html>
