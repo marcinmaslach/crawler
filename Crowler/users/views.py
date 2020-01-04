@@ -16,7 +16,8 @@ def register():
         user = User(email=form.email.data,
                     username=form.username.data,
                     password=form.password.data)
-                    
+
+        user.viewed_flats_links = ''           
         db.session.add(user)
         db.session.commit()
         flash('Thanks for registering! Now you can login!')

@@ -8,10 +8,16 @@ from Crowler.core.filtrs import User_Filtr
 from Crowler.core.forms import FilterForm
 from Crowler.users.forms import LoginForm
 
+import requests
+from bs4 import BeautifulSoup
+import re
+
 core = Blueprint('core', __name__)
-floats_to_show = []
-photos_to_show = []
-length = []
+offerts = []
+length = ""
+
+name = ""
+
 
 @core.route('/', methods=['GET', 'POST'])
 def index():
@@ -44,29 +50,77 @@ def index():
 @core.route('/<username>', methods=['GET', 'POST'])
 def user_page(username):
 
+    global offerts
+    global length
+    global name
+
+    offerts = []
+    length = []
+
+    name = username
+
     form = FilterForm()
     if form.validate_on_submit():
-        global floats_to_show 
-        global photos_to_show 
-        global length
+
         user = User.query.filter_by(username=username).first_or_404()
-        checked_links = [user.viewed_floats_links]
-        checked_photos = [user.viewed_floats_photos]
+
+        # make url and download olx page
         user_input = User_Filtr(form.number_of_rooms.data, form.price_from.data, form.price_to.data, form.localization.data)
-        release_spider = Spider(user_input.make_taget_url(), checked_links, checked_photos)
-        release_spider.add_pages()
-        pages = len(release_spider.next_pages)
-        i = 0
-        while i < pages:
-            scanning = Spider(release_spider.next_pages[i], checked_links, checked_photos)
-            scanning.crowl()
-            #scanning.crawling_on_photos()
-            i += 1
+        olxpage = user_input.make_taget_url()
+        result = requests.get(olxpage)
+
+        # if successful parse the download into a BeautifulSoup object, which allows easy manipulation 
+        if result.status_code == 200:
+            soup = BeautifulSoup(result.content, "html.parser")
+    
+        # find the object with HTML class wibitable sortable
+        table = soup.find('table',{'class':'fixed offers breakword redesigned'})
+
+        # loop through all the rows and get all informations 
+        #offerts = []
+        for row in table.find_all('tr', {'class':'wrap'}):
+            img = row.find_all('img', {'class':'fleft'})
+            title = row.find_all('a', {'class':'marginright5 link linkWithHash detailsLink'})
+            price = row.find_all('p', {'class':'price'})
+
+            link = [t.get('href') for t in title]
+            # deal with errors
+            if len(link) != 0:
+                url = link[0]
+                if "www.olx.pl/oferta" in url:
+                    response = requests.get(url)
+                    html = response.content.decode('utf-8')
+
+                    offert_id = re.findall('(ID ogłoszenia: )(.*?)<', html)[0][1]
+                else:
+                    offert_id = '0'
+
+            if offert_id not in user.viewed_flats_links:
+                # order: img, title, link, price
+                column = ([i.get('src') for i in img], [t.get_text() for t in title], [t.get('href') for t in title], [p.get_text() for p in price])
+                offerts.append(column)
+
+                user.viewed_flats_links += offert_id + ","
+                db.session.add(user)
+                db.session.commit()
+
+        length = list(range(len(offerts)))
         
-        floats_to_show = scanning.take_all_info()
-        #photos_to_show = scanning.photos
-        """if floats_to_show[0]==None:
-            floats_to_show = floats_to_show[1:]
-            photos_to_show = photos_to_show[1:]"""
-        length = list(range(len(floats_to_show)))
-    return render_template('user_page.html',form=form, floats_to_show=floats_to_show, length=length)
+
+        
+
+    return render_template('user_page.html',form=form, offerts=offerts, length=length)
+
+@core.route('/delete_history')
+def delete_history():
+
+    global name
+
+    user = User.query.filter_by(username=name).first_or_404()
+    user.viewed_flats_links = ""
+    db.session.add(user)
+    db.session.commit()
+
+    flash("Historia usunięta")
+
+    return redirect(url_for('core.user_page', username = user.username))

@@ -43,9 +43,14 @@ class Spider():
             if link != None:
                 html = self.decode_html(link)
                 photos = re.findall('(?:<img src=")(.*?)"', html)
-                price = re.findall('(?:<strong class="xxxx-large not-arranged">)(.*?) zł</strong>', html)
+                price = re.findall('(?:<strong class="xxxx-large not-arranged"">)(.*?) zł</strong>', html)
+                if price == []:
+                    price = re.findall('(?:<strong class="xxxx-large arranged"">)(.*?) zł</strong>', html)
                 title = re.findall('(.*)</h1', html)
-                infos.append([link, photos[0], price[0], title[0]])
+                try:
+                    infos.append([link, photos[0], price[0], title[0]])
+                except Exception:
+                    infos = "Wybierz inny przedział!"
         return infos
 
 
