@@ -22,6 +22,8 @@ name = ""
 @core.route('/', methods=['GET', 'POST'])
 def index():
 
+    global name
+
     form = LoginForm()
 
     if form.validate_on_submit():
@@ -41,6 +43,7 @@ def index():
             # So let's now check if that next exists, otherwise we'll go to
             # the welcome page.
             username = user.username
+            name = user.username
             if next == None or not next[0]=='/':
                 next = url_for('core.user_page', username = user.username)
 
@@ -52,14 +55,13 @@ def user_page(username):
 
     global offerts
     global length
-    global name
 
     offerts = []
     length = []
 
-    name = username
 
     form = FilterForm()
+
     if form.validate_on_submit():
 
         user = User.query.filter_by(username=username).first_or_404()
@@ -115,12 +117,11 @@ def user_page(username):
 def delete_history():
 
     global name
+    print(name)
 
     user = User.query.filter_by(username=name).first_or_404()
     user.viewed_flats_links = ""
     db.session.add(user)
     db.session.commit()
-
-    flash("Historia usunięta")
 
     return redirect(url_for('core.user_page', username = user.username))
